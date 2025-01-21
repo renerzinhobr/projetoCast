@@ -22,3 +22,5 @@
    o JPA/Hibernate.
    o Banco de dados a escolha
    o Testes unitários com JUnit e Mockito.
+   -----------------------------------------------------------------------------------
+   Para rodar apenas carregar na ide rodar com java 22 
