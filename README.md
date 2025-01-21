@@ -1,5 +1,5 @@
 # projetoCast
-20/01/2025 - Foi implementado desafio baixo  para uma vaga de um projeto. 
+20/01/2025 - Foi implementado desafio abaixo  para uma vaga de um projeto. 
 
 1. Requisitos de Funcionalidades:
    o Criar operações básicas de manipulação de contas:
