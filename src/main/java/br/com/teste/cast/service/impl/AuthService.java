@@ -46,7 +46,6 @@ public class AuthService implements IAuthService,UserDetailsService {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfilUsuario().name()));
         }
 
-
             return new User(
                 usuario.getLogin(),
                 usuario.getSenha(),
@@ -83,7 +82,7 @@ public class AuthService implements IAuthService,UserDetailsService {
                 new UsernamePasswordAuthenticationToken(principal, usuario.getSenha(), principal.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetails(request));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+          SecurityContextHolder.getContext().setAuthentication(authentication);
 
 
         HttpSession session = request.getSession();

@@ -125,7 +125,9 @@ public class ContaService implements IContaService {
     @Override
     public Conta buscarContaPorIdParaOperacao(Long idConta,HttpSession session) {
         Usuario usuario = (Usuario) session.getAttribute("usuario");
-        return verificarSeContaPertenceAoUsuario(usuario.getIdUsuario().longValue(), idConta);
+        return contaRepository.findByUsuario_IdUsuarioAndId(usuario.getIdUsuario(), idConta)
+                .orElseThrow(() -> new ContaNaoPertenceAoUsuarioException(
+                        Mensagem.ERRO_CONTA_NAO_PERTENCE_USUARIO_LOGADO.getTexto()));
    }
 
     @Override
@@ -151,14 +153,6 @@ public class ContaService implements IContaService {
         return contaRepository.findAllByUsuario_IdUsuario(usuario.getIdUsuario().longValue());
 
     }
-
-    public Conta verificarSeContaPertenceAoUsuario(Long usuarioId, Long idConta) {
-        return contaRepository.findByUsuario_IdUsuarioAndId(usuarioId, idConta)
-                .orElseThrow(() -> new ContaNaoPertenceAoUsuarioException(
-                        Mensagem.ERRO_CONTA_NAO_PERTENCE_USUARIO_LOGADO.getTexto()));
-    }
-
-
 }
 
 

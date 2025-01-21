@@ -3,6 +3,7 @@ package br.com.teste.cast.controller;
 import br.com.teste.cast.dto.UsuarioDTO;
 import br.com.teste.cast.model.Usuario;
 import br.com.teste.cast.service.impl.UsuarioService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@RolesAllowed("ADMIN")
 @Controller
 @RequestMapping("/usuarios")
 public class UsuarioController {

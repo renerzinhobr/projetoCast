@@ -9,6 +9,7 @@ import br.com.teste.cast.model.Usuario;
 import br.com.teste.cast.service.IAuthService;
 import br.com.teste.cast.service.IContaService;
 import br.com.teste.cast.service.IUsuarioService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,18 +39,15 @@ public class ContaController {
     @Autowired
     private IAuthService authService;
 
+    @RolesAllowed("CORRENTISTA")
     @GetMapping("/listar")
     public String listarContas(Model model,HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
 
             model.addAttribute("contas",contaService.buscarTodasContasUsuario(session));
             return "contas/listar";
-        } else {
-            return "naoAutorizado";
-        }
 
     }
-
+    @RolesAllowed("ADMIN")
     @GetMapping("/listarAdmin")
     public String listarContasAdmin(Model model, HttpSession session) {
         if (authService.VerificaRoleNaSession(session, PerfilUsuario.ADMIN.getRole())) {
@@ -59,35 +57,29 @@ public class ContaController {
             return "naoAutorizado";
         }
     }
-
+    @RolesAllowed("ADMIN")
     @GetMapping("/formCriarConta")
     public String exibirFormularioCriacaoConta(Model model,HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.ADMIN.getRole())) {
+
         List<Usuario> usuarios = usuarioService.listarUsuarios();
         model.addAttribute("usuarios", usuarios);
         return "contas/criar";
-        } else {
-            return "naoAutorizado";
-        }
-    }
+          }
 
+    @RolesAllowed("ADMIN")
     @GetMapping("/formEditarConta/{id}")
-    public String exibirFormularioEditarConta(@PathVariable("id") Long id,Model model,HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.ADMIN.getRole())) {
+    public String exibirFormularioEditarConta(@PathVariable("id") Long id,Model model) {
             Conta conta = contaService.buscarContaPorId(id);
             List<Usuario> usuarios = usuarioService.listarUsuarios();
             model.addAttribute("usuarios", usuarios);
             model.addAttribute("conta", conta);
             return "contas/editar";
-        } else {
-            return "naoAutorizado";
-        }
     }
 
-
+    @RolesAllowed("ADMIN")
     @PostMapping("/salvar")
-    public ResponseEntity<String> salvarConta(@Valid @RequestBody ContaDTO contaDTO,HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.ADMIN.getRole())) {
+    public ResponseEntity<String> salvarConta(@Valid @RequestBody ContaDTO contaDTO) {
+
             try {
                 contaService.salvarConta(contaDTO);
                 return ResponseEntity.ok(Mensagem.CONTA_SALVA.getTexto());
@@ -96,39 +88,30 @@ public class ContaController {
                         .body(Mensagem.ERRO_SALVAR_CONTA.getTexto().concat(e.getMessage()));
             }
 
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Mensagem.ERRO_USUARIO_NAO_AUTORIZADO.getTexto());
-        }
     }
 
 
-
+    @RolesAllowed("CORRENTISTA")
     @PostMapping("/creditar/{id}")
+    public ResponseEntity<String> creditarValor(@PathVariable("id") Long id, @RequestBody Map<String, Double> payload,HttpSession session) {
 
-    public ResponseEntity<String> creditarValor(@PathVariable("id") Long id, @RequestBody Map<String, Double> payload) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
         try {
             Double valor = payload.get("valor");
             Util.validarValor(valor, Mensagem.ERRO_VALOR_INVALIDO.getTexto());
-            Conta conta = contaService.buscarContaPorId(id);
+            Conta conta = contaService.buscarContaPorIdParaOperacao(id,session);
             contaService.creditar(conta.getId(), valor);
             return ResponseEntity.ok(Mensagem.CREDITO_EFETIVADO.getTexto());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Mensagem.ERRO_CREDITAR_CONTA.getTexto().concat(e.getMessage()));
         }
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Mensagem.ERRO_USUARIO_NAO_AUTORIZADO.getTexto());
-        }
+
     }
 
-
+    @RolesAllowed("CORRENTISTA")
     @GetMapping("/formOperacoes/{id}")
     public String exibirFormularioOperacoes(@PathVariable("id") Long id, Model model,HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
-            try {
+       try {
         Conta contaOp = contaService.buscarContaPorIdParaOperacao(id, session);
             List<Conta> contasDestino = contaService.buscarTodasContas();
             contasDestino.removeIf(conta -> conta.getId().equals(contaOp.getId()));
@@ -141,16 +124,12 @@ public class ContaController {
                 return "naoAutorizado";
             }
 
-    } else {
-        return "naoAutorizado";
-    }
     }
 
-
+    @RolesAllowed("CORRENTISTA")
     @PostMapping("/debitar/{id}")
     public ResponseEntity<String> debitarValor(@PathVariable("id") Long id, @RequestBody Map<String, Double> payload, HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
-        try {
+       try {
             Conta conta = contaService.buscarContaPorIdParaOperacao(id, session);
             Double valor = payload.get("valor");
             Util.validarValor(valor, Mensagem.ERRO_VALOR_INVALIDO.getTexto());
@@ -167,16 +146,13 @@ public class ContaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Mensagem.ERRO_DEBITAR_CONTA.getTexto().concat(e.getMessage()));
         }
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Mensagem.ERRO_USUARIO_NAO_AUTORIZADO.getTexto());
-        }
+
     }
 
-
+    @RolesAllowed("CORRENTISTA")
     @GetMapping("/formTrasferir/{id}")
     public String exibirFormularioTransferir(@PathVariable("id") Long id, Model model, HttpSession session) {
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
+
         try {
             Conta contaOrigem = contaService.buscarContaPorIdParaOperacao(id, session);
             List<Conta> contasDestino = contaService.buscarTodasContas();
@@ -189,15 +165,11 @@ public class ContaController {
         } catch (Exception e) {
             return "naoAutorizado";
         }
-        } else {
-            return "naoAutorizado";
-        }
-    }
-
+       }
+    @RolesAllowed("CORRENTISTA")
     @PostMapping("/transferir/{id}")
     public ResponseEntity<String> transferirValor(@PathVariable("id") Long id, @RequestBody Map<String, Double> payload,HttpSession session){
-        if (authService.VerificaRoleNaSession(session, PerfilUsuario.CORRENTISTA.getRole())) {
-        try {
+          try {
             Double valor = payload.get("valor");
             Util.validarValor(valor, Mensagem.ERRO_VALOR_INVALIDO.getTexto());
             Double idContaDestino = payload.get("idContaDestino");
@@ -212,11 +184,6 @@ public class ContaController {
                     .body(Mensagem.ERRO_TRANSFERIR_CONTA.getTexto().concat(e.getMessage()));
         }
 
-    }
-        else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Mensagem.ERRO_USUARIO_NAO_AUTORIZADO.getTexto());
-        }
     }
 
 }
